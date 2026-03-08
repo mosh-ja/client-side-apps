@@ -23,3 +23,7 @@ This project is intended for GitHub Pages using:
 - `404.html`: SPA deep-link fallback for GitHub Pages
 - `core/`: shared infrastructure (router, global styles)
 - `apps/`: app-specific modules, assets, and docs
+
+## Update workflow
+
+- After each change, update the `<!-- Refreshed: YYYY-MM-DD HH:MM -->` comment in `index.html` so browser refresh behavior is easier to verify.
