@@ -1,4 +1,5 @@
 export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
+  const MAX_INPUT_BYTES = 30 * 1024 * 1024;
   let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
@@ -65,6 +66,11 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     const raw = editor.value.trim();
     if (!raw) {
       throw new Error('Please enter JSON first.');
+    }
+
+    const rawSizeBytes = new TextEncoder().encode(raw).length;
+    if (rawSizeBytes > MAX_INPUT_BYTES) {
+      throw new Error('Input exceeds 30MB limit.');
     }
 
     return JSON.parse(raw);
