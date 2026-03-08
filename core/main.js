@@ -1,26 +1,34 @@
-import { renderFavoritesSeparator } from '../apps/favorites-separator/app.js';
-
 const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
+let activeAppStylesheet = null;
+const APP_STYLES_VERSION = '20260308-1';
+const APP_MODULE_VERSION = '20260308-2';
+let favoritesSeparatorModule = null;
+let jsonFormatterModule = null;
 
 restorePathFrom404Redirect();
-route();
-window.addEventListener('popstate', route);
+void route();
+window.addEventListener('popstate', () => {
+  void route();
+});
 
-function route() {
+async function route() {
   if (disposeCurrentView) {
     disposeCurrentView();
     disposeCurrentView = null;
   }
 
-  const path = window.location.pathname;
+  const path = normalizePath(window.location.pathname);
   const basePath = getBasePath(path);
 
-  if (path === `${basePath}/apps/favorites-separator/pipe`) {
+  if (path.endsWith('/apps/favorites-separator/pipe')) {
+    clearAppStylesheet();
+    const { renderFavoritesSeparator } = await loadFavoritesSeparatorModule();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
+      navigateTo,
       symbol: '|',
       label: 'Pipe separator',
       faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/separator-pipe.png'),
@@ -29,10 +37,13 @@ function route() {
     return;
   }
 
-  if (path === `${basePath}/apps/favorites-separator/dash`) {
+  if (path.endsWith('/apps/favorites-separator/dash')) {
+    clearAppStylesheet();
+    const { renderFavoritesSeparator } = await loadFavoritesSeparatorModule();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
+      navigateTo,
       symbol: '-',
       label: 'Dash separator',
       faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/separator-dash.png'),
@@ -41,6 +52,22 @@ function route() {
     return;
   }
 
+  if (path.endsWith('/apps/json-formatter')) {
+    const { renderJsonFormatter } = await loadJsonFormatterModule();
+    disposeCurrentView = renderJsonFormatter({
+      root: appRoot,
+      basePath,
+      navigateTo,
+      setFavicon,
+      faviconHref: assetUrl(basePath, '/apps/home/assets/site-favicon.svg'),
+      ensureAppStylesheet: (appStylesPath) => {
+        ensureAppStylesheet(assetUrl(basePath, appStylesPath));
+      },
+    });
+    return;
+  }
+
+  clearAppStylesheet();
   renderHome(basePath);
 }
 
@@ -65,9 +92,9 @@ function renderHome(basePath) {
           <div class="card-subtitle">Same behavior with dash icon.</div>
         </a>
 
-        <a class="card" href="#" aria-disabled="true">
+        <a class="card" href="${basePath}/apps/json-formatter" data-link>
           <div class="card-title">JSON Formatter</div>
-          <div class="card-subtitle">Coming next.</div>
+          <div class="card-subtitle">Format, minify, validate, copy, and clear in one editor.</div>
         </a>
 
         <a class="card" href="#" aria-disabled="true">
@@ -88,8 +115,7 @@ function bindClientNavigation() {
       event.preventDefault();
       const href = link.getAttribute('href');
       const nextUrl = new URL(href, window.location.origin);
-      window.history.pushState({}, '', nextUrl.pathname + nextUrl.search + nextUrl.hash);
-      route();
+      navigateTo(nextUrl.pathname + nextUrl.search + nextUrl.hash);
     });
   });
 }
@@ -130,4 +156,50 @@ function getBasePath(pathname) {
 
 function assetUrl(basePath, assetPath) {
   return `${basePath}${assetPath}`;
+}
+
+function normalizePath(pathname) {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1);
+  }
+  return pathname;
+}
+
+function ensureAppStylesheet(href) {
+  const versionedHref = `${href}?v=${APP_STYLES_VERSION}`;
+
+  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(versionedHref)) {
+    return;
+  }
+
+  clearAppStylesheet();
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = versionedHref;
+  document.head.appendChild(link);
+  activeAppStylesheet = link;
+}
+
+function clearAppStylesheet() {
+  if (!activeAppStylesheet) return;
+  activeAppStylesheet.remove();
+  activeAppStylesheet = null;
+}
+
+function navigateTo(pathWithQueryAndHash) {
+  window.history.pushState({}, '', pathWithQueryAndHash);
+  void route();
+}
+
+async function loadFavoritesSeparatorModule() {
+  if (favoritesSeparatorModule) return favoritesSeparatorModule;
+  favoritesSeparatorModule = await import(`../apps/favorites-separator/app.js?v=${APP_MODULE_VERSION}`);
+  return favoritesSeparatorModule;
+}
+
+async function loadJsonFormatterModule() {
+  if (jsonFormatterModule) return jsonFormatterModule;
+  jsonFormatterModule = await import(`../apps/json-formatter/app.js?v=${APP_MODULE_VERSION}`);
+  return jsonFormatterModule;
 }

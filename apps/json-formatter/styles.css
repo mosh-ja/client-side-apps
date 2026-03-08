@@ -1,0 +1,118 @@
+.json-formatter-page {
+  max-width: 1200px;
+  padding-top: 20px;
+}
+
+.json-status {
+  color: var(--muted);
+  font-size: 13px;
+  min-height: 18px;
+  text-align: right;
+}
+
+.json-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.json-toolbar-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.json-toolbar-left {
+  justify-content: flex-start;
+}
+
+.json-toolbar-middle {
+  justify-content: center;
+  justify-self: center;
+}
+
+.json-toolbar-right {
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+.json-status {
+  width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.json-select {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.json-btn {
+  cursor: pointer;
+}
+
+.json-editor-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.json-editor {
+  width: 100%;
+  min-height: 320px;
+  border: 0;
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: transparent;
+  resize: none;
+}
+
+.json-editor:focus {
+  outline: none;
+}
+
+.json-error {
+  margin-top: 10px;
+  min-height: 20px;
+  color: #b00020;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .json-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .json-toolbar-left,
+  .json-toolbar-middle,
+  .json-toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+    justify-self: stretch;
+  }
+
+  .json-status {
+    width: auto;
+    text-align: left;
+  }
+
+  .json-editor {
+    min-height: 360px;
+  }
+}
