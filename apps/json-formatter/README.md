@@ -9,7 +9,7 @@ A compact single-editor JSON tool.
 ## Features
 
 - One editor box for both input and output
-- Line-number gutter synced with editor scrolling
+- Inline parse-error context preview (shows text around error location)
 - `Format` with indentation options
 - `Minify`
 - `Validate`

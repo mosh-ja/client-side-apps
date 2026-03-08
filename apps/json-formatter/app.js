@@ -1,5 +1,6 @@
 export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
   const MAX_INPUT_BYTES = 30 * 1024 * 1024;
+  const ERROR_CONTEXT_RADIUS = 40;
   let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
@@ -33,28 +34,27 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
       </div>
 
       <div class="json-editor-wrap">
-        <div id="json-line-numbers" class="json-line-numbers" aria-hidden="true"></div>
         <textarea id="json-editor" class="json-editor" spellcheck="false" placeholder='Paste JSON here, then use Format / Minify / Validate...'></textarea>
       </div>
 
       <p id="json-error" class="json-error" role="alert" aria-live="assertive"></p>
+      <pre id="json-error-context" class="json-error-context" aria-live="polite" hidden></pre>
     </section>
   `;
 
   const homeLink = root.querySelector('[data-home]');
   const editor = root.querySelector('#json-editor');
-  const lineNumbers = root.querySelector('#json-line-numbers');
   const status = root.querySelector('#json-status');
   const error = root.querySelector('#json-error');
+  const errorContext = root.querySelector('#json-error-context');
   const indentSelect = root.querySelector('#json-indent');
   const actionButtons = root.querySelectorAll('[data-action]');
-  let highlightedErrorLine = null;
-  let renderedLineCount = 0;
-  let renderedHighlightedLine = null;
 
   const clearMessages = () => {
     error.textContent = '';
     status.textContent = '';
+    errorContext.hidden = true;
+    errorContext.innerHTML = '';
   };
 
   const setError = (message) => {
@@ -84,9 +84,18 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
   const getJsonErrorLocation = (message, sourceText) => {
     const lineColumnMatch = message.match(/line\s+(\d+)\s+column\s+(\d+)/i);
     if (lineColumnMatch) {
+      const line = Number(lineColumnMatch[1]);
+      const column = Number(lineColumnMatch[2]);
+      const lines = sourceText.split('\n');
+      let position = 0;
+      for (let i = 0; i < line - 1 && i < lines.length; i += 1) {
+        position += lines[i].length + 1;
+      }
+      position += Math.max(0, column - 1);
       return {
-        line: Number(lineColumnMatch[1]),
-        column: Number(lineColumnMatch[2]),
+        line,
+        column,
+        position,
       };
     }
 
@@ -102,44 +111,42 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     const lastNewlineIndex = sourceText.lastIndexOf('\n', Math.max(0, safePosition - 1));
     const column = safePosition - lastNewlineIndex;
 
-    return { line, column };
+    return { line, column, position: safePosition };
   };
 
-  const updateLineNumbers = (force = false) => {
-    if (!lineNumbers) return;
-    const lineCount = Math.max(1, editor.value.split('\n').length);
+  const escapeHtml = (value) => {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  };
 
-    if (!force && lineCount === renderedLineCount && renderedHighlightedLine === highlightedErrorLine) {
+  const renderErrorContext = (sourceText, location) => {
+    if (!location || !Number.isFinite(location.position)) {
+      errorContext.hidden = true;
+      errorContext.innerHTML = '';
       return;
     }
 
-    const fragment = document.createDocumentFragment();
-    for (let i = 1; i <= lineCount; i += 1) {
-      const lineNumber = document.createElement('span');
-      lineNumber.className = i === highlightedErrorLine ? 'json-line-number is-error' : 'json-line-number';
-      lineNumber.textContent = String(i);
-      fragment.appendChild(lineNumber);
-    }
+    const safePosition = Math.max(0, Math.min(sourceText.length, location.position));
+    const start = Math.max(0, safePosition - ERROR_CONTEXT_RADIUS);
+    const end = Math.min(sourceText.length, safePosition + ERROR_CONTEXT_RADIUS);
+    const before = sourceText.slice(start, safePosition);
+    const at = sourceText.slice(safePosition, Math.min(sourceText.length, safePosition + 1));
+    const after = sourceText.slice(Math.min(sourceText.length, safePosition + 1), end);
+    const marker = at || ' ';
 
-    lineNumbers.replaceChildren(fragment);
-    lineNumbers.style.setProperty('--json-gutter-chars', String(Math.max(2, String(lineCount).length)));
-    renderedLineCount = lineCount;
-    renderedHighlightedLine = highlightedErrorLine;
-  };
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < sourceText.length ? '...' : '';
+    const lineInfo = `Line ${location.line}, Column ${location.column}`;
+    const beforeHtml = escapeHtml(before);
+    const atHtml = escapeHtml(marker);
+    const afterHtml = escapeHtml(after);
 
-  const syncLineNumberScroll = () => {
-    if (!lineNumbers) return;
-    lineNumbers.scrollTop = editor.scrollTop;
-  };
-
-  const revealLine = (line) => {
-    if (!line || line < 1) return;
-    const computed = window.getComputedStyle(editor);
-    const lineHeight = Number.parseFloat(computed.lineHeight) || 21;
-    const paddingTop = Number.parseFloat(computed.paddingTop) || 14;
-    const targetTop = Math.max(0, paddingTop + (line - 1) * lineHeight - lineHeight * 2);
-    editor.scrollTop = targetTop;
-    syncLineNumberScroll();
+    errorContext.innerHTML = `${lineInfo}\n${prefix}${beforeHtml}<mark>${atHtml}</mark>${afterHtml}${suffix}`;
+    errorContext.hidden = false;
   };
 
   const getIndent = () => {
@@ -160,8 +167,6 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
 
     if (action === 'clear') {
       editor.value = '';
-      highlightedErrorLine = null;
-      updateLineNumbers(true);
       clearMessages();
       editor.focus();
       return;
@@ -186,41 +191,34 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
       const parsed = parseEditorJson();
 
       if (action === 'validate') {
-        highlightedErrorLine = null;
-        updateLineNumbers(true);
+        errorContext.hidden = true;
+        errorContext.innerHTML = '';
         setStatus('Valid JSON.');
         return;
       }
 
       if (action === 'format') {
         editor.value = `${JSON.stringify(parsed, null, getIndent())}\n`;
-        highlightedErrorLine = null;
-        updateLineNumbers(true);
+        errorContext.hidden = true;
+        errorContext.innerHTML = '';
         setStatus('Formatted.');
         return;
       }
 
       if (action === 'minify') {
         editor.value = JSON.stringify(parsed);
-        highlightedErrorLine = null;
-        updateLineNumbers(true);
+        errorContext.hidden = true;
+        errorContext.innerHTML = '';
         setStatus('Minified.');
       }
     } catch (parseError) {
       const location = getJsonErrorLocation(parseError.message, editor.value);
-      highlightedErrorLine = location?.line ?? null;
-      updateLineNumbers(true);
-      if (location?.line) {
-        revealLine(location.line);
-      }
+      renderErrorContext(editor.value, location);
       setError(parseError.message);
     }
   };
 
   const onInput = () => {
-    highlightedErrorLine = null;
-    updateLineNumbers();
-    syncLineNumberScroll();
     if (error.textContent || status.textContent) {
       clearMessages();
     }
@@ -249,14 +247,10 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
 
   if (editor) {
     editor.addEventListener('input', onInput);
-    editor.addEventListener('scroll', syncLineNumberScroll);
     activeHandlers.push(() => editor.removeEventListener('input', onInput));
-    activeHandlers.push(() => editor.removeEventListener('scroll', syncLineNumberScroll));
     window.addEventListener('resize', fitEditorToViewport);
     activeHandlers.push(() => window.removeEventListener('resize', fitEditorToViewport));
     fitEditorToViewport();
-    updateLineNumbers(true);
-    syncLineNumberScroll();
     editor.focus();
   }
 
