@@ -8,6 +8,7 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     <section class="page json-formatter-page">
       <div class="json-toolbar">
         <div class="json-toolbar-group json-toolbar-left">
+          <span style="font-size:11px;color:#666;margin-right:6px;">LEFT</span>
           <button class="nav-link json-btn" data-action="format">Format</button>
           <button class="nav-link json-btn" data-action="minify">Minify</button>
           <button class="nav-link json-btn" data-action="validate">Validate</button>
@@ -16,6 +17,7 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
         </div>
 
         <div class="json-toolbar-group json-toolbar-middle">
+          <span style="font-size:11px;color:#666;margin-right:6px;">MIDDLE</span>
           <label for="json-indent" class="json-label">Indent</label>
           <select id="json-indent" class="json-select">
             <option value="2" selected>2 spaces</option>
@@ -26,9 +28,14 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
         </div>
 
         <div class="json-toolbar-group json-toolbar-right">
+          <span style="font-size:11px;color:#666;margin-right:6px;">RIGHT</span>
           <div class="json-status" id="json-status" role="status" aria-live="polite"></div>
           <a class="nav-link" href="${basePath || '/'}" data-home>Home</a>
         </div>
+      </div>
+
+      <div style="font-size:11px;color:#0b5;letter-spacing:0.04em;margin:0 0 8px 2px;">
+        JSON_FORMATTER_LAYOUT_DEBUG_V3
       </div>
 
       <div class="json-editor-wrap">
