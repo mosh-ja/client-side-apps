@@ -94,6 +94,27 @@
   font-size: 13px;
 }
 
+.json-error-context {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #b00020 30%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, #b00020 6%, var(--surface));
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.json-error-context mark {
+  background: #ffd1d9;
+  color: #47000d;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 @media (max-width: 700px) {
   .json-toolbar {
     grid-template-columns: 1fr;

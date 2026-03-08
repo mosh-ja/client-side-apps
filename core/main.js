@@ -2,8 +2,7 @@ const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
-const APP_STYLES_VERSION = '20260308-1';
-const APP_MODULE_VERSION = '20260308-2';
+const APP_MODULE_VERSION = '20260308-7';
 let favoritesSeparatorModule = null;
 let jsonFormatterModule = null;
 
@@ -59,7 +58,7 @@ async function route() {
       basePath,
       navigateTo,
       setFavicon,
-      faviconHref: assetUrl(basePath, '/apps/home/assets/site-favicon.svg'),
+      faviconHref: assetUrl(basePath, '/apps/json-formatter/assets/json-favicon.svg'),
       ensureAppStylesheet: (appStylesPath) => {
         ensureAppStylesheet(assetUrl(basePath, appStylesPath));
       },
@@ -166,9 +165,7 @@ function normalizePath(pathname) {
 }
 
 function ensureAppStylesheet(href) {
-  const versionedHref = `${href}?v=${APP_STYLES_VERSION}`;
-
-  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(versionedHref)) {
+  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(href)) {
     return;
   }
 
@@ -176,7 +173,7 @@ function ensureAppStylesheet(href) {
 
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = versionedHref;
+  link.href = href;
   document.head.appendChild(link);
   activeAppStylesheet = link;
 }

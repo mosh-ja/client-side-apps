@@ -1,5 +1,6 @@
 export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
   const MAX_INPUT_BYTES = 30 * 1024 * 1024;
+  const ERROR_CONTEXT_RADIUS = 140;
   let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
@@ -37,6 +38,7 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
       </div>
 
       <p id="json-error" class="json-error" role="alert" aria-live="assertive"></p>
+      <pre id="json-error-context" class="json-error-context" aria-live="polite" hidden></pre>
     </section>
   `;
 
@@ -44,12 +46,19 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
   const editor = root.querySelector('#json-editor');
   const status = root.querySelector('#json-status');
   const error = root.querySelector('#json-error');
+  const errorContext = root.querySelector('#json-error-context');
   const indentSelect = root.querySelector('#json-indent');
   const actionButtons = root.querySelectorAll('[data-action]');
+
+  const clearErrorContext = () => {
+    errorContext.hidden = true;
+    errorContext.innerHTML = '';
+  };
 
   const clearMessages = () => {
     error.textContent = '';
     status.textContent = '';
+    clearErrorContext();
   };
 
   const setError = (message) => {
@@ -60,11 +69,12 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
   const setStatus = (message) => {
     status.textContent = message;
     error.textContent = '';
+    clearErrorContext();
   };
 
   const parseEditorJson = () => {
-    const raw = editor.value.trim();
-    if (!raw) {
+    const raw = editor.value;
+    if (!raw.trim()) {
       throw new Error('Please enter JSON first.');
     }
 
@@ -74,6 +84,73 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     }
 
     return JSON.parse(raw);
+  };
+
+  const getJsonErrorLocation = (message, sourceText) => {
+    const lineColumnMatch = message.match(/line\s+(\d+)\s+column\s+(\d+)/i);
+    if (lineColumnMatch) {
+      const line = Number(lineColumnMatch[1]);
+      const column = Number(lineColumnMatch[2]);
+      const lines = sourceText.split('\n');
+      let position = 0;
+      for (let i = 0; i < line - 1 && i < lines.length; i += 1) {
+        position += lines[i].length + 1;
+      }
+      position += Math.max(0, column - 1);
+      return {
+        line,
+        column,
+        position,
+      };
+    }
+
+    const positionMatch = message.match(/position\s+(\d+)/i);
+    if (!positionMatch) return null;
+
+    const position = Number(positionMatch[1]);
+    if (!Number.isFinite(position) || position < 0) return null;
+
+    const safePosition = Math.min(position, sourceText.length);
+    const precedingText = sourceText.slice(0, safePosition);
+    const line = precedingText.split('\n').length;
+    const lastNewlineIndex = sourceText.lastIndexOf('\n', Math.max(0, safePosition - 1));
+    const column = safePosition - lastNewlineIndex;
+
+    return { line, column, position: safePosition };
+  };
+
+  const escapeHtml = (value) => {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  };
+
+  const renderErrorContext = (sourceText, location) => {
+    if (!location || !Number.isFinite(location.position)) {
+      clearErrorContext();
+      return;
+    }
+
+    const safePosition = Math.max(0, Math.min(sourceText.length, location.position));
+    const start = Math.max(0, safePosition - ERROR_CONTEXT_RADIUS);
+    const end = Math.min(sourceText.length, safePosition + ERROR_CONTEXT_RADIUS);
+    const before = sourceText.slice(start, safePosition);
+    const at = sourceText.slice(safePosition, Math.min(sourceText.length, safePosition + 1));
+    const after = sourceText.slice(Math.min(sourceText.length, safePosition + 1), end);
+    const marker = at || ' ';
+
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < sourceText.length ? '...' : '';
+    const lineInfo = `Line ${location.line}, Column ${location.column}`;
+    const beforeHtml = escapeHtml(before);
+    const atHtml = escapeHtml(marker);
+    const afterHtml = escapeHtml(after);
+
+    errorContext.innerHTML = `${lineInfo}\n${prefix}${beforeHtml}<mark>${atHtml}</mark>${afterHtml}${suffix}`;
+    errorContext.hidden = false;
   };
 
   const getIndent = () => {
@@ -133,6 +210,8 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
         setStatus('Minified.');
       }
     } catch (parseError) {
+      const location = getJsonErrorLocation(parseError.message, editor.value);
+      renderErrorContext(editor.value, location);
       setError(parseError.message);
     }
   };
