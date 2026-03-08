@@ -26,4 +26,4 @@ This project is intended for GitHub Pages using:
 
 ## Update workflow
 
-- After each change, update the `<!-- Refreshed: YYYY-MM-DD HH:MM -->` comment in `index.html` so browser refresh behavior is easier to verify.
+- After each change!, update the `<!-- Refreshed: YYYY-MM-DD HH:MM -->` comment in `index.html` so browser refresh behavior is easier to verify.
