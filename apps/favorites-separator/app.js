@@ -1,6 +1,6 @@
 let activeClickHandler = null;
 
-export function renderFavoritesSeparator({ root, basePath, symbol, label, faviconHref, setFavicon }) {
+export function renderFavoritesSeparator({ root, basePath, navigateTo, symbol, label, faviconHref, setFavicon }) {
   setFavicon(faviconHref);
 
   // True empty titles are inconsistent across browsers. Zero-width space keeps it visually blank.
@@ -26,8 +26,7 @@ export function renderFavoritesSeparator({ root, basePath, symbol, label, favico
     homeLink.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      window.history.pushState({}, '', basePath || '/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      navigateTo(basePath || '/');
     });
   }
 

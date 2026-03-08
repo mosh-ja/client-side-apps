@@ -24,6 +24,7 @@ function route() {
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
+      navigateTo,
       symbol: '|',
       label: 'Pipe separator',
       faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/separator-pipe.png'),
@@ -37,6 +38,7 @@ function route() {
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
+      navigateTo,
       symbol: '-',
       label: 'Dash separator',
       faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/separator-dash.png'),
@@ -49,6 +51,7 @@ function route() {
     disposeCurrentView = renderJsonFormatter({
       root: appRoot,
       basePath,
+      navigateTo,
       setFavicon,
       faviconHref: assetUrl(basePath, '/apps/home/assets/site-favicon.svg'),
       ensureAppStylesheet: (appStylesPath) => {
@@ -106,8 +109,7 @@ function bindClientNavigation() {
       event.preventDefault();
       const href = link.getAttribute('href');
       const nextUrl = new URL(href, window.location.origin);
-      window.history.pushState({}, '', nextUrl.pathname + nextUrl.search + nextUrl.hash);
-      route();
+      navigateTo(nextUrl.pathname + nextUrl.search + nextUrl.hash);
     });
   });
 }
@@ -175,4 +177,9 @@ function clearAppStylesheet() {
   if (!activeAppStylesheet) return;
   activeAppStylesheet.remove();
   activeAppStylesheet = null;
+}
+
+function navigateTo(pathWithQueryAndHash) {
+  window.history.pushState({}, '', pathWithQueryAndHash);
+  route();
 }

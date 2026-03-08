@@ -1,4 +1,4 @@
-export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, ensureAppStylesheet }) {
+export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
   let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
@@ -6,13 +6,16 @@ export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, e
 
   root.innerHTML = `
     <section class="page json-formatter-page">
-      <header class="header json-header">
-        <a class="nav-link" href="${basePath || '/'}" data-home>Home</a>
-        <div class="json-status" id="json-status" role="status" aria-live="polite"></div>
-      </header>
-
       <div class="json-toolbar">
-        <div class="json-toolbar-group">
+        <div class="json-toolbar-group json-toolbar-left">
+          <button class="nav-link json-btn" data-action="format">Format</button>
+          <button class="nav-link json-btn" data-action="minify">Minify</button>
+          <button class="nav-link json-btn" data-action="validate">Validate</button>
+          <button class="nav-link json-btn" data-action="copy">Copy</button>
+          <button class="nav-link json-btn" data-action="clear">Clear</button>
+        </div>
+
+        <div class="json-toolbar-group json-toolbar-middle">
           <label for="json-indent" class="json-label">Indent</label>
           <select id="json-indent" class="json-select">
             <option value="2" selected>2 spaces</option>
@@ -22,12 +25,9 @@ export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, e
           </select>
         </div>
 
-        <div class="json-toolbar-group">
-          <button class="nav-link json-btn" data-action="format">Format</button>
-          <button class="nav-link json-btn" data-action="minify">Minify</button>
-          <button class="nav-link json-btn" data-action="validate">Validate</button>
-          <button class="nav-link json-btn" data-action="copy">Copy</button>
-          <button class="nav-link json-btn" data-action="clear">Clear</button>
+        <div class="json-toolbar-group json-toolbar-right">
+          <div class="json-status" id="json-status" role="status" aria-live="polite"></div>
+          <a class="nav-link" href="${basePath || '/'}" data-home>Home</a>
         </div>
       </div>
 
@@ -80,8 +80,7 @@ export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, e
   const onHomeClick = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    window.history.pushState({}, '', basePath || '/');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigateTo(basePath || '/');
   };
 
   const onActionClick = async (event) => {
@@ -138,6 +137,17 @@ export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, e
     }
   };
 
+  const fitEditorToViewport = () => {
+    const toolbar = root.querySelector('.json-toolbar');
+    const errorArea = root.querySelector('.json-error');
+    const viewportHeight = window.innerHeight;
+    const toolbarHeight = toolbar ? toolbar.getBoundingClientRect().height : 0;
+    const errorHeight = errorArea ? errorArea.getBoundingClientRect().height : 0;
+    const reservedSpace = 150 + toolbarHeight + errorHeight;
+    const height = Math.max(320, viewportHeight - reservedSpace);
+    editor.style.height = `${height}px`;
+  };
+
   if (homeLink) {
     homeLink.addEventListener('click', onHomeClick);
     activeHandlers.push(() => homeLink.removeEventListener('click', onHomeClick));
@@ -151,6 +161,9 @@ export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, e
   if (editor) {
     editor.addEventListener('input', onInput);
     activeHandlers.push(() => editor.removeEventListener('input', onInput));
+    window.addEventListener('resize', fitEditorToViewport);
+    activeHandlers.push(() => window.removeEventListener('resize', fitEditorToViewport));
+    fitEditorToViewport();
     editor.focus();
   }
 
