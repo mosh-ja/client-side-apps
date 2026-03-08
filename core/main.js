@@ -5,6 +5,7 @@ const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
+const APP_STYLES_VERSION = '20260308-1';
 
 restorePathFrom404Redirect();
 route();
@@ -160,7 +161,9 @@ function normalizePath(pathname) {
 }
 
 function ensureAppStylesheet(href) {
-  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(href)) {
+  const versionedHref = `${href}?v=${APP_STYLES_VERSION}`;
+
+  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(versionedHref)) {
     return;
   }
 
@@ -168,7 +171,7 @@ function ensureAppStylesheet(href) {
 
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = href;
+  link.href = versionedHref;
   document.head.appendChild(link);
   activeAppStylesheet = link;
 }
