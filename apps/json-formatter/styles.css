@@ -64,13 +64,38 @@
 }
 
 .json-editor-wrap {
+  display: flex;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
   overflow: hidden;
 }
 
+.json-line-numbers {
+  width: calc(var(--json-gutter-chars, 2) * 1ch + 22px);
+  padding: 14px 8px 14px 12px;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, black 8%);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+}
+
+.json-line-number {
+  display: block;
+}
+
+.json-line-number.is-error {
+  color: #b00020;
+  font-weight: 700;
+}
+
 .json-editor {
+  flex: 1;
   width: 100%;
   min-height: 320px;
   border: 0;
