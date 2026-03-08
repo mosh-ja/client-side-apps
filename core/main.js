@@ -1,17 +1,19 @@
-import { renderFavoritesSeparator } from '../apps/favorites-separator/app.js';
-import { renderJsonFormatter } from '../apps/json-formatter/app.js';
-
 const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
 const APP_STYLES_VERSION = '20260308-1';
+const APP_MODULE_VERSION = '20260308-2';
+let favoritesSeparatorModule = null;
+let jsonFormatterModule = null;
 
 restorePathFrom404Redirect();
-route();
-window.addEventListener('popstate', route);
+void route();
+window.addEventListener('popstate', () => {
+  void route();
+});
 
-function route() {
+async function route() {
   if (disposeCurrentView) {
     disposeCurrentView();
     disposeCurrentView = null;
@@ -22,6 +24,7 @@ function route() {
 
   if (path.endsWith('/apps/favorites-separator/pipe')) {
     clearAppStylesheet();
+    const { renderFavoritesSeparator } = await loadFavoritesSeparatorModule();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
@@ -36,6 +39,7 @@ function route() {
 
   if (path.endsWith('/apps/favorites-separator/dash')) {
     clearAppStylesheet();
+    const { renderFavoritesSeparator } = await loadFavoritesSeparatorModule();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
@@ -49,6 +53,7 @@ function route() {
   }
 
   if (path.endsWith('/apps/json-formatter')) {
+    const { renderJsonFormatter } = await loadJsonFormatterModule();
     disposeCurrentView = renderJsonFormatter({
       root: appRoot,
       basePath,
@@ -184,5 +189,17 @@ function clearAppStylesheet() {
 
 function navigateTo(pathWithQueryAndHash) {
   window.history.pushState({}, '', pathWithQueryAndHash);
-  route();
+  void route();
+}
+
+async function loadFavoritesSeparatorModule() {
+  if (favoritesSeparatorModule) return favoritesSeparatorModule;
+  favoritesSeparatorModule = await import(`../apps/favorites-separator/app.js?v=${APP_MODULE_VERSION}`);
+  return favoritesSeparatorModule;
+}
+
+async function loadJsonFormatterModule() {
+  if (jsonFormatterModule) return jsonFormatterModule;
+  jsonFormatterModule = await import(`../apps/json-formatter/app.js?v=${APP_MODULE_VERSION}`);
+  return jsonFormatterModule;
 }
