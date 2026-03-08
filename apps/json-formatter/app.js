@@ -1,5 +1,5 @@
 export function renderJsonFormatter({ root, basePath, setFavicon, faviconHref, ensureAppStylesheet }) {
-  const activeHandlers = [];
+  let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
   document.title = 'JSON Formatter';

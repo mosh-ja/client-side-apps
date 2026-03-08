@@ -19,7 +19,7 @@ function route() {
   const path = normalizePath(window.location.pathname);
   const basePath = getBasePath(path);
 
-  if (path === `${basePath}/apps/favorites-separator/pipe`) {
+  if (path.endsWith('/apps/favorites-separator/pipe')) {
     clearAppStylesheet();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
@@ -32,7 +32,7 @@ function route() {
     return;
   }
 
-  if (path === `${basePath}/apps/favorites-separator/dash`) {
+  if (path.endsWith('/apps/favorites-separator/dash')) {
     clearAppStylesheet();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
@@ -45,7 +45,7 @@ function route() {
     return;
   }
 
-  if (path === `${basePath}/apps/json-formatter`) {
+  if (path.endsWith('/apps/json-formatter')) {
     disposeCurrentView = renderJsonFormatter({
       root: appRoot,
       basePath,
