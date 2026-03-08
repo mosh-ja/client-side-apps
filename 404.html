@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <script>
+      (function () {
+        var path = window.location.pathname;
+        var query = window.location.search;
+        var hash = window.location.hash;
+        var marker = '/apps/';
+        var markerIndex = path.indexOf(marker);
+        var basePath = markerIndex !== -1 ? path.slice(0, markerIndex) : path.replace(/\/404\.html$/, '');
+
+        if (!basePath) {
+          basePath = '/';
+        }
+
+        var appPath = markerIndex !== -1 ? path.slice(markerIndex) : '/';
+        var target =
+          basePath +
+          '?p=' +
+          encodeURIComponent(appPath) +
+          '&q=' +
+          encodeURIComponent(query || '') +
+          '&h=' +
+          encodeURIComponent(hash || '');
+
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
