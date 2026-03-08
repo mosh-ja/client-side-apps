@@ -50,11 +50,15 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
   const indentSelect = root.querySelector('#json-indent');
   const actionButtons = root.querySelectorAll('[data-action]');
 
+  const clearErrorContext = () => {
+    errorContext.hidden = true;
+    errorContext.innerHTML = '';
+  };
+
   const clearMessages = () => {
     error.textContent = '';
     status.textContent = '';
-    errorContext.hidden = true;
-    errorContext.innerHTML = '';
+    clearErrorContext();
   };
 
   const setError = (message) => {
@@ -65,6 +69,7 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
   const setStatus = (message) => {
     status.textContent = message;
     error.textContent = '';
+    clearErrorContext();
   };
 
   const parseEditorJson = () => {
@@ -125,8 +130,7 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
 
   const renderErrorContext = (sourceText, location) => {
     if (!location || !Number.isFinite(location.position)) {
-      errorContext.hidden = true;
-      errorContext.innerHTML = '';
+      clearErrorContext();
       return;
     }
 
@@ -191,24 +195,18 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
       const parsed = parseEditorJson();
 
       if (action === 'validate') {
-        errorContext.hidden = true;
-        errorContext.innerHTML = '';
         setStatus('Valid JSON.');
         return;
       }
 
       if (action === 'format') {
         editor.value = `${JSON.stringify(parsed, null, getIndent())}\n`;
-        errorContext.hidden = true;
-        errorContext.innerHTML = '';
         setStatus('Formatted.');
         return;
       }
 
       if (action === 'minify') {
         editor.value = JSON.stringify(parsed);
-        errorContext.hidden = true;
-        errorContext.innerHTML = '';
         setStatus('Minified.');
       }
     } catch (parseError) {
