@@ -1,7 +1,6 @@
 export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
   const MAX_INPUT_BYTES = 30 * 1024 * 1024;
-  const ERROR_CONTEXT_RADIUS = 40;
-  const ERROR_SELECTION_RADIUS = 12;
+  const ERROR_CONTEXT_RADIUS = 140;
   let activeHandlers = [];
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/json-formatter/styles.css');
@@ -150,23 +149,6 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     errorContext.hidden = false;
   };
 
-  const clearEditorSelection = () => {
-    const end = editor.value.length;
-    editor.setSelectionRange(end, end);
-  };
-
-  const highlightErrorInEditor = (sourceText, location) => {
-    if (!location || !Number.isFinite(location.position)) {
-      clearEditorSelection();
-      return;
-    }
-
-    const safePosition = Math.max(0, Math.min(sourceText.length, location.position));
-    const start = Math.max(0, safePosition - ERROR_SELECTION_RADIUS);
-    const end = Math.min(sourceText.length, safePosition + ERROR_SELECTION_RADIUS + 1);
-    editor.setSelectionRange(start, end);
-  };
-
   const getIndent = () => {
     if (indentSelect.value === 'tab') {
       return '\t';
@@ -186,7 +168,6 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
     if (action === 'clear') {
       editor.value = '';
       clearMessages();
-      clearEditorSelection();
       editor.focus();
       return;
     }
@@ -212,7 +193,6 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
       if (action === 'validate') {
         errorContext.hidden = true;
         errorContext.innerHTML = '';
-        clearEditorSelection();
         setStatus('Valid JSON.');
         return;
       }
@@ -221,7 +201,6 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
         editor.value = `${JSON.stringify(parsed, null, getIndent())}\n`;
         errorContext.hidden = true;
         errorContext.innerHTML = '';
-        clearEditorSelection();
         setStatus('Formatted.');
         return;
       }
@@ -230,13 +209,11 @@ export function renderJsonFormatter({ root, basePath, navigateTo, setFavicon, fa
         editor.value = JSON.stringify(parsed);
         errorContext.hidden = true;
         errorContext.innerHTML = '';
-        clearEditorSelection();
         setStatus('Minified.');
       }
     } catch (parseError) {
       const location = getJsonErrorLocation(parseError.message, editor.value);
       renderErrorContext(editor.value, location);
-      highlightErrorInEditor(editor.value, location);
       setError(parseError.message);
     }
   };

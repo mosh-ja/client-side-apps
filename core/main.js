@@ -2,8 +2,8 @@ const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
-const APP_STYLES_VERSION = '20260308-3';
-const APP_MODULE_VERSION = '20260308-5';
+const APP_STYLES_VERSION = '20260308-4';
+const APP_MODULE_VERSION = '20260308-7';
 let favoritesSeparatorModule = null;
 let jsonFormatterModule = null;
 
