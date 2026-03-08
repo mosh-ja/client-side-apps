@@ -1,8 +1,10 @@
 import { renderFavoritesSeparator } from '../apps/favorites-separator/app.js';
+import { renderJsonFormatter } from '../apps/json-formatter/app.js';
 
 const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
+let activeAppStylesheet = null;
 
 restorePathFrom404Redirect();
 route();
@@ -14,10 +16,11 @@ function route() {
     disposeCurrentView = null;
   }
 
-  const path = window.location.pathname;
+  const path = normalizePath(window.location.pathname);
   const basePath = getBasePath(path);
 
   if (path === `${basePath}/apps/favorites-separator/pipe`) {
+    clearAppStylesheet();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
@@ -30,6 +33,7 @@ function route() {
   }
 
   if (path === `${basePath}/apps/favorites-separator/dash`) {
+    clearAppStylesheet();
     disposeCurrentView = renderFavoritesSeparator({
       root: appRoot,
       basePath,
@@ -41,6 +45,20 @@ function route() {
     return;
   }
 
+  if (path === `${basePath}/apps/json-formatter`) {
+    disposeCurrentView = renderJsonFormatter({
+      root: appRoot,
+      basePath,
+      setFavicon,
+      faviconHref: assetUrl(basePath, '/apps/home/assets/site-favicon.svg'),
+      ensureAppStylesheet: (appStylesPath) => {
+        ensureAppStylesheet(assetUrl(basePath, appStylesPath));
+      },
+    });
+    return;
+  }
+
+  clearAppStylesheet();
   renderHome(basePath);
 }
 
@@ -65,9 +83,9 @@ function renderHome(basePath) {
           <div class="card-subtitle">Same behavior with dash icon.</div>
         </a>
 
-        <a class="card" href="#" aria-disabled="true">
+        <a class="card" href="${basePath}/apps/json-formatter" data-link>
           <div class="card-title">JSON Formatter</div>
-          <div class="card-subtitle">Coming next.</div>
+          <div class="card-subtitle">Format, minify, validate, copy, and clear in one editor.</div>
         </a>
 
         <a class="card" href="#" aria-disabled="true">
@@ -130,4 +148,31 @@ function getBasePath(pathname) {
 
 function assetUrl(basePath, assetPath) {
   return `${basePath}${assetPath}`;
+}
+
+function normalizePath(pathname) {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1);
+  }
+  return pathname;
+}
+
+function ensureAppStylesheet(href) {
+  if (activeAppStylesheet && activeAppStylesheet.href.endsWith(href)) {
+    return;
+  }
+
+  clearAppStylesheet();
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+  activeAppStylesheet = link;
+}
+
+function clearAppStylesheet() {
+  if (!activeAppStylesheet) return;
+  activeAppStylesheet.remove();
+  activeAppStylesheet = null;
 }
