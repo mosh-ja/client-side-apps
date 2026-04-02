@@ -51,6 +51,21 @@ async function route() {
     return;
   }
 
+  if (path.endsWith('/apps/favorites-separator/empty')) {
+    clearAppStylesheet();
+    const { renderFavoritesSeparator } = await loadFavoritesSeparatorModule();
+    disposeCurrentView = renderFavoritesSeparator({
+      root: appRoot,
+      basePath,
+      navigateTo,
+      symbol: '\u200B',
+      label: 'Empty separator',
+      faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/empty.ico'),
+      setFavicon,
+    });
+    return;
+  }
+
   if (path.endsWith('/apps/json-formatter')) {
     const { renderJsonFormatter } = await loadJsonFormatterModule();
     disposeCurrentView = renderJsonFormatter({
@@ -91,6 +106,11 @@ function renderHome(basePath) {
           <div class="card-subtitle">Same behavior with dash icon.</div>
         </a>
 
+        <a class="card" href="${basePath}/apps/favorites-separator/empty" data-link>
+          <div class="card-title">Favorites Separator: blank</div>
+          <div class="card-subtitle">Transparent favicon; same random-query bookmark flow.</div>
+        </a>
+
         <a class="card" href="${basePath}/apps/json-formatter" data-link>
           <div class="card-title">JSON Formatter</div>
           <div class="card-subtitle">Format, minify, validate, copy, and clear in one editor.</div>
@@ -122,6 +142,14 @@ function bindClientNavigation() {
 function setFavicon(href) {
   if (!favicon) return;
   favicon.href = href;
+  const pathOnly = href.split(/[?#]/)[0].toLowerCase();
+  if (pathOnly.endsWith('.ico')) {
+    favicon.type = 'image/x-icon';
+  } else if (pathOnly.endsWith('.png')) {
+    favicon.type = 'image/png';
+  } else if (pathOnly.endsWith('.svg')) {
+    favicon.type = 'image/svg+xml';
+  }
 }
 
 function restorePathFrom404Redirect() {
