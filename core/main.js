@@ -2,9 +2,10 @@ const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
-const APP_MODULE_VERSION = '20260308-7';
+const APP_MODULE_VERSION = '20260402-9';
 let favoritesSeparatorModule = null;
 let jsonFormatterModule = null;
+let textAppModule = null;
 
 restorePathFrom404Redirect();
 void route();
@@ -81,6 +82,21 @@ async function route() {
     return;
   }
 
+  if (path.endsWith('/apps/text')) {
+    const { renderTextApp } = await loadTextAppModule();
+    disposeCurrentView = renderTextApp({
+      root: appRoot,
+      basePath,
+      navigateTo,
+      setFavicon,
+      faviconHref: assetUrl(basePath, '/apps/text/assets/text-favicon.svg'),
+      ensureAppStylesheet: (appStylesPath) => {
+        ensureAppStylesheet(assetUrl(basePath, appStylesPath));
+      },
+    });
+    return;
+  }
+
   clearAppStylesheet();
   renderHome(basePath);
 }
@@ -116,9 +132,9 @@ function renderHome(basePath) {
           <div class="card-subtitle">Format, minify, validate, copy, and clear in one editor.</div>
         </a>
 
-        <a class="card" href="#" aria-disabled="true">
-          <div class="card-title">Text Editor</div>
-          <div class="card-subtitle">Coming next.</div>
+        <a class="card" href="${basePath}/apps/text" data-link>
+          <div class="card-title">Text</div>
+          <div class="card-subtitle">Simple notepad with copy, paste, clear; text persists in this browser.</div>
         </a>
       </div>
     </section>
@@ -227,4 +243,10 @@ async function loadJsonFormatterModule() {
   if (jsonFormatterModule) return jsonFormatterModule;
   jsonFormatterModule = await import(`../apps/json-formatter/app.js?v=${APP_MODULE_VERSION}`);
   return jsonFormatterModule;
+}
+
+async function loadTextAppModule() {
+  if (textAppModule) return textAppModule;
+  textAppModule = await import(`../apps/text/app.js?v=${APP_MODULE_VERSION}`);
+  return textAppModule;
 }
