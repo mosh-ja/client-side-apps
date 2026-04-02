@@ -11,6 +11,7 @@ A simple notepad with clipboard actions and local persistence.
 - Large text area
 - `Copy`, `Paste`, `Clear`, and `Home`
 - Content saved in `localStorage` for the same browser and origin
+- Maximum **10 MB** of text (UTF-8 byte length), consistent with typical browser storage limits; older saves above that are trimmed on load
 
 ## Usage
 

@@ -1,9 +1,37 @@
 const STORAGE_KEY = 'client-side-apps-text-v1';
 const SAVE_DEBOUNCE_MS = 200;
+/** Maximum editor content size (UTF-8 bytes), aligned with typical localStorage quotas. */
+const MAX_BYTES = 10 * 1024 * 1024;
+
+const utf8Encoder = new TextEncoder();
+
+function utf8ByteLength(str) {
+  return utf8Encoder.encode(str).length;
+}
+
+function truncateUtf8ToMaxBytes(str, maxBytes) {
+  if (utf8ByteLength(str) <= maxBytes) {
+    return str;
+  }
+
+  let lo = 0;
+  let hi = str.length;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi + 1) / 2);
+    const slice = str.slice(0, mid);
+    if (utf8ByteLength(slice) <= maxBytes) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return str.slice(0, lo);
+}
 
 export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconHref, ensureAppStylesheet }) {
   let activeHandlers = [];
   let saveTimer = null;
+  let lastValidValue = '';
 
   setFavicon(faviconHref);
   ensureAppStylesheet('/apps/text/styles.css');
@@ -28,7 +56,7 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
         <textarea id="text-editor" class="text-editor" spellcheck="true" placeholder="Type or paste text. It is saved automatically in this browser."></textarea>
       </div>
 
-      <p class="text-hint">Text is stored locally in your browser and appears when you return.</p>
+      <p class="text-hint">Text is stored locally in your browser (up to 10&nbsp;MB) and appears when you return.</p>
     </section>
   `;
 
@@ -42,6 +70,9 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
   };
 
   const persistNow = () => {
+    if (utf8ByteLength(editor.value) > MAX_BYTES) {
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, editor.value);
     } catch {
@@ -61,10 +92,24 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
 
   const loadStored = () => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      editor.value = stored ?? '';
+      const stored = localStorage.getItem(STORAGE_KEY) ?? '';
+      if (utf8ByteLength(stored) > MAX_BYTES) {
+        const truncated = truncateUtf8ToMaxBytes(stored, MAX_BYTES);
+        editor.value = truncated;
+        lastValidValue = truncated;
+        try {
+          localStorage.setItem(STORAGE_KEY, truncated);
+        } catch {
+          setStatus('Could not save after trimming stored text.');
+        }
+        setStatus('Stored text exceeded 10 MB; it was trimmed to fit.');
+        return;
+      }
+      editor.value = stored;
+      lastValidValue = stored;
     } catch {
       editor.value = '';
+      lastValidValue = '';
       setStatus('Could not read saved text.');
     }
   };
@@ -80,6 +125,7 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
 
     if (action === 'clear') {
       editor.value = '';
+      lastValidValue = '';
       persistNow();
       setStatus('Cleared.');
       editor.focus();
@@ -108,7 +154,14 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
         const end = editor.selectionEnd;
         const before = editor.value.slice(0, start);
         const after = editor.value.slice(end);
-        editor.value = `${before}${clip}${after}`;
+        const merged = `${before}${clip}${after}`;
+        if (utf8ByteLength(merged) > MAX_BYTES) {
+          setStatus(`Paste would exceed the ${MAX_BYTES / (1024 * 1024)} MB limit.`);
+          editor.focus();
+          return;
+        }
+        editor.value = merged;
+        lastValidValue = merged;
         const caret = start + clip.length;
         editor.setSelectionRange(caret, caret);
         persistNow();
@@ -121,6 +174,12 @@ export function renderTextApp({ root, basePath, navigateTo, setFavicon, faviconH
   };
 
   const onInput = () => {
+    if (utf8ByteLength(editor.value) > MAX_BYTES) {
+      editor.value = lastValidValue;
+      setStatus('Content is limited to 10 MB (UTF-8).');
+      return;
+    }
+    lastValidValue = editor.value;
     schedulePersist();
     if (status.textContent) {
       status.textContent = '';
