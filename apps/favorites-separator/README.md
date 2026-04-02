@@ -6,7 +6,7 @@ A tiny bookmark helper page for creating visual separators in the browser favori
 
 - `.../apps/favorites-separator/pipe` -> separator icon: `|`
 - `.../apps/favorites-separator/dash` -> separator icon: `-`
-- `.../apps/favorites-separator/empty` -> blank UI; favicon: transparent `empty.ico`
+- `.../apps/favorites-separator/empty` -> blank UI; favicon: transparent `empty.png`
 
 ## How to use
 
@@ -22,7 +22,7 @@ The page click updates the URL query to a random value (`?x=<random>`), so each 
 - `app.js`: app UI and interaction logic
 - `assets/separator-pipe.png`: pipe favicon asset
 - `assets/separator-dash.png`: dash favicon asset
-- `assets/empty.ico`: transparent 16×16 favicon for the empty separator
+- `assets/empty.png`: transparent favicon for the empty separator
 
 ## Notes
 

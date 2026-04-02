@@ -2,7 +2,7 @@ const appRoot = document.getElementById('app');
 const favicon = document.getElementById('app-favicon');
 let disposeCurrentView = null;
 let activeAppStylesheet = null;
-const APP_MODULE_VERSION = '20260402-9';
+const APP_MODULE_VERSION = '20260402-10';
 let favoritesSeparatorModule = null;
 let jsonFormatterModule = null;
 let textAppModule = null;
@@ -61,7 +61,7 @@ async function route() {
       navigateTo,
       symbol: '\u200B',
       label: 'Empty separator',
-      faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/empty.ico'),
+      faviconHref: assetUrl(basePath, '/apps/favorites-separator/assets/empty.png'),
       setFavicon,
     });
     return;
